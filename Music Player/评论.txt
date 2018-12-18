@@ -1,0 +1,408 @@
+package com.happy.datas;
+
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+
+public class Commentdb {
+
+    String DBDriver = "com.mysql.jdbc.Driver";
+    String DBURL = "jdbc:mysql://localhost:3306/info";
+    String DBUser = "root";
+    String DBPass = "LJQ19981028";
+    private static java.sql.Connection conn = null;
+
+    public void initParam() throws Exception {
+	try {
+	    Class.forName(DBDriver);
+	    conn = DriverManager.getConnection(DBURL, DBUser, DBPass);
+	} catch (ClassNotFoundException e) {
+	    e.printStackTrace();
+	}
+    }
+
+    public void insert2(String name, String praise, String time) throws Exception {
+	java.sql.Connection conn = DriverManager.getConnection(DBURL, DBUser, DBPass);
+	java.sql.PreparedStatement pstmt = conn.prepareStatement("insert into user information values(?,?,?)");
+	pstmt.setString(1, name);
+	pstmt.setString(2, praise);
+	pstmt.setString(3, time);
+	pstmt.executeUpdate();
+    }
+
+    public String select2(String name, String praise, String time) throws Exception {
+
+	java.sql.Connection conn = DriverManager.getConnection(DBURL, DBUser, DBPass);
+	java.sql.Statement statement = conn.createStatement();
+	// 要执行的SQL语句
+	String sql = "select *from user information";
+	// 3.ResultSet类，用来存放获取的结果集！！
+	ResultSet rs = statement.executeQuery(sql);
+	while (rs.next()) {
+	    // 获取stuname这列数据
+	    name = rs.getString("name");
+	    praise = rs.getString("Comment");
+	    time = rs.getString("time");
+	}
+	rs.close();
+	conn.close();
+	return name + praise + time;
+    }
+
+    public String friendCircle() throws Exception {
+	java.sql.Connection conn = DriverManager.getConnection(DBURL, DBUser, DBPass);
+	java.sql.Statement statement = conn.createStatement();
+	String sql = "select *from user information";
+	ResultSet rs = statement.executeQuery(sql);
+	String str = "";
+	String name = null;
+	String parise = null;
+	String time = null;
+	ArrayList<String> strArray = new ArrayList<String>();
+	int j = 0;
+	while (rs.next()) {
+	    name = rs.getString("name");
+	    parise = rs.getString("Comment");
+	    time = rs.getString("time");
+	    strArray.add(name + "\t" + parise + "\n" + time + "\n\n");
+	    j++;
+	}
+	for (int i = j - 1; i >= 0; i--) {
+	    str = str + strArray.get(i);
+	}
+	rs.close();
+	conn.close();
+	return str;
+    }
+
+}
+package 界面;
+
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+
+import 数据库.Mysql;
+
+public class Community {
+
+	private JFrame frame;
+	String str;
+    String time;
+	
+	/**
+	 * @throws Exception 
+	 * @wbp.parser.entryPoint
+	 */
+	public void initialize(String ar) throws Exception {
+		frame = new JFrame();
+		frame.setBounds(388, 164, 600, 450);
+		//frame.setBounds(100, 100, 750, 600);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.getContentPane().setLayout(null);
+		
+		//发表评论框
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(55, 50, 400, 80);
+		frame.getContentPane().add(scrollPane);		
+		JTextArea textArea = new JTextArea();
+		textArea.setWrapStyleWord(true);
+		//textArea.setEditable(false);
+		textArea.setLineWrap(true);
+		scrollPane.setViewportView(textArea);
+		
+		//评论显示框
+		/*JScrollPane scrollPane_1 = new JScrollPane();
+		scrollPane_1.setBounds(70,180, 400, 300);
+		frame.getContentPane().add(scrollPane_1);
+		JTextPane textPane = new JTextPane();
+		textPane.setEditable(false);
+		textPane.setLineWrap(true);
+		scrollPane_1.setViewportView(textPane);*/
+
+		JLabel label = new JLabel("\u8BF7\u53D1\u8868\u4F60\u7684\u8BC4\u8BBA");//发表评论
+		label.setBounds(21, 10, 166, 29);
+		label.setFont(new   java.awt.Font("Dialog",   1,   15)); 
+		frame.getContentPane().add(label);
+		
+		/*JTextArea textArea = new JTextArea();//发表评论框
+		textArea.setLineWrap(true);
+		JScrollPane taJsp = new JScrollPane();	
+		taJsp.add(textArea);
+		taJsp.setViewportView(textArea);
+		taJsp.setBounds(70, 60, 400, 100);
+		frame.getContentPane().add(taJsp);*/
+		
+		JTextArea textArea_1 = new JTextArea();//已有评论框
+		textArea_1.setLineWrap(true);
+		JScrollPane taJsp1 = new JScrollPane();	
+		taJsp1.add(textArea_1);
+		textArea_1.setEditable(false);
+		taJsp1.setViewportView(textArea_1);
+		taJsp1.setBounds(55,160, 400, 200);
+		frame.getContentPane().add(taJsp1);
+	    String ss = text();
+		textArea_1.setText(ss);
+		textArea_1.setCaretPosition(0);  
+		
+		JButton button = new JButton("发表");
+		button.setBounds(500, 145, 70, 25);
+		button.setFont(new java.awt.Font("Dialog", 1, 15));
+		frame.getContentPane().add(button);
+		
+		button.addActionListener(new ActionListener() {
+			Mysql a = new Mysql() ;			
+			String ar0;
+			public void actionPerformed(ActionEvent e) {
+				try{
+					this.ar0 = ar ;//用户名
+					a.initParam();
+					str = textArea.getText(); //评论
+					//获取时间
+					SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
+					String time = df.format(new Date());
+					a.insert2(ar0,str,time) ;
+					
+					try {
+						a.initParam();
+						a.select2(ar0,str,time);
+					    //str = a.select2(ar0,str,time);
+					} catch (Exception e1) {
+
+						e1.printStackTrace();
+					}
+					//textPane.setText("用户:"+ar0+" 在 "+time+" 发表:"+str);
+					//textArea_1.setText("用户:"+ar0+" 在 "+time+" 发表:"+str);
+					textArea_1.setText(text());
+					frame.repaint(); 
+					//frame.dispose();
+				}catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}													   
+			}
+		});
+		
+		JButton button_1 = new JButton("返回");
+		button_1.setBounds(500, 376, 74, 25);
+		button_1.setFont(new java.awt.Font("Dialog", 1, 15));
+		frame.getContentPane().add(button_1);
+			
+		button_1.addActionListener(new ActionListener()
+        { 
+			  String ar0;
+             public void actionPerformed(ActionEvent e)
+              {           	
+            	 frame.dispose();
+            	 this.ar0 = ar ;
+            	 Interface a=new Interface();
+            	 a.initialize(ar0);
+              }
+         });
+
+		/*JButton button_3 = new JButton("分享");
+		button_3.setBounds(600, 145, 70, 25);
+		button_3.setFont(new java.awt.Font("Dialog", 1, 15));
+		frame.getContentPane().add(button_3);
+		
+		button_3.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				try{
+					Share a = new Share() ;
+					a.initialize();
+				}catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});*/
+
+		JLabel jb1 = new JLabel();
+		Image image1 = new ImageIcon("img/5_1.jpg").getImage();
+		jb1.setIcon(new ImageIcon(image1));
+		jb1.setBounds(0, 0,600, 450);
+		frame.getContentPane().add(jb1);
+		
+			
+		frame.setVisible(true);
+	}
+	public String text() throws Exception{
+		String s;
+		Mysql mm = new Mysql();
+		s = mm.friendCircle();
+		return s;
+	}
+}
+
+
+
+
+
+package com.happy.ui;
+
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+
+import com.happy.datas.Commentdb;
+
+public class CommentFrame {
+
+    private static JFrame frame;
+    String str;
+    String time;
+    private static JTextArea textArea, textArea_1;
+
+    /**
+     * @throws Exception
+     * @wbp.parser.entryPoint
+     */
+    public void initialize() throws Exception {
+	frame = new JFrame();
+	frame.setBounds(388, 164, 600, 450);
+	// frame.setBounds(100, 100, 750, 600);
+	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+	frame.getContentPane().setLayout(null);
+
+	// 发表评论框
+	JScrollPane scrollPane = new JScrollPane();
+	scrollPane.setBounds(55, 50, 400, 80);
+	frame.getContentPane().add(scrollPane);
+	textArea = new JTextArea();
+	textArea.setWrapStyleWord(true);
+	// textArea.setEditable(false);
+	textArea.setLineWrap(true);
+	scrollPane.setViewportView(textArea);
+
+	// 评论显示框
+	/*
+	 * JScrollPane scrollPane_1 = new JScrollPane();
+	 * scrollPane_1.setBounds(70,180, 400, 300);
+	 * frame.getContentPane().add(scrollPane_1); JTextPane textPane = new
+	 * JTextPane(); textPane.setEditable(false); textPane.setLineWrap(true);
+	 * scrollPane_1.setViewportView(textPane);
+	 */
+
+	JLabel label = new JLabel("\u8BF7\u53D1\u8868\u4F60\u7684\u8BC4\u8BBA");// 发表评论
+	label.setBounds(21, 10, 166, 29);
+	label.setFont(new java.awt.Font("Dialog", 1, 15));
+	frame.getContentPane().add(label);
+
+	/*
+	 * JTextArea textArea = new JTextArea();//发表评论框
+	 * textArea.setLineWrap(true); JScrollPane taJsp = new JScrollPane();
+	 * taJsp.add(textArea); taJsp.setViewportView(textArea);
+	 * taJsp.setBounds(70, 60, 400, 100); frame.getContentPane().add(taJsp);
+	 */
+
+	textArea_1 = new JTextArea();// 已有评论框
+	textArea_1.setLineWrap(true);
+	JScrollPane taJsp1 = new JScrollPane();
+	taJsp1.add(textArea_1);
+	textArea_1.setEditable(false);
+	taJsp1.setViewportView(textArea_1);
+	taJsp1.setBounds(55, 160, 400, 200);
+	frame.getContentPane().add(taJsp1);
+	String ss = text();
+	textArea_1.setText(ss);
+	textArea_1.setCaretPosition(0);
+
+	JButton button = new JButton("发表");
+	button.setBounds(500, 145, 70, 25);
+	button.setFont(new java.awt.Font("Dialog", 1, 15));
+	frame.getContentPane().add(button);
+
+	button.addActionListener(new ActionListener() {
+	    Commentdb a = new Commentdb();
+
+	    public void actionPerformed(ActionEvent e) {
+		try {
+		    a.initParam();
+		    str = textArea.getText(); // 评论
+		    // 获取时间
+		    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");// 设置日期格式
+		    String time = df.format(new Date());
+		    a.insert2(ar, str, time);
+
+		    try {
+			a.initParam();
+			a.select2(ar, str, time);
+			// str = a.select2(ar,str,time);
+		    } catch (Exception e1) {
+
+			e1.printStackTrace();
+		    }
+		    // textPane.setText("用户:"+ar0+" 在 "+time+" 发表:"+str);
+		    // textArea_1.setText("用户:"+ar0+" 在 "+time+" 发表:"+str);
+		    textArea_1.setText(text());
+		    frame.repaint();
+		    // frame.dispose();
+		} catch (Exception e1) {
+		    // TODO Auto-generated catch block
+		    e1.printStackTrace();
+		}
+	    }
+	});
+
+	JButton button_1 = new JButton("返回");
+	button_1.setBounds(500, 376, 74, 25);
+	button_1.setFont(new java.awt.Font("Dialog", 1, 15));
+	frame.getContentPane().add(button_1);
+
+	button_1.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		frame.dispose();
+	    }
+	});
+
+	/*
+	 * JButton button_3 = new JButton("分享"); button_3.setBounds(600, 145,
+	 * 70, 25); button_3.setFont(new java.awt.Font("Dialog", 1, 15));
+	 * frame.getContentPane().add(button_3);
+	 * 
+	 * button_3.addActionListener(new ActionListener(){ public void
+	 * actionPerformed(ActionEvent e){ try{ Share a = new Share() ;
+	 * a.initialize(); }catch (Exception e1) { // TODO Auto-generated catch
+	 * block e1.printStackTrace(); } } });
+	 */
+
+	// JLabel jb1 = new JLabel();
+	// Image image1 = new ImageIcon("img/5_1.jpg").getImage();
+	// jb1.setIcon(new ImageIcon(image1));
+	// jb1.setBounds(0, 0,600, 450);
+	// frame.getContentPane().add(jb1);
+
+	frame.setVisible(true);
+    }
+
+    public String text() throws Exception {
+	String s;
+	Commentdb mm = new Commentdb();
+	s = mm.friendCircle();
+	return s;
+    }
+}
+
+
